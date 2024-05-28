@@ -1,0 +1,98 @@
+name: build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    name: build ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+          arch: [x86_64]
+          # arch: [x86_64, x86, aarch64, armhf, armv7, ppc64le, s390x]
+          os: [ubuntu-latest]
+          branch: [v3.19]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout 7-zip sources
+        uses: actions/checkout@v4
+        with:
+          repository: 'ip7z/7zip'
+          path: 7zip
+
+      - name: Setup ccache
+        uses: actions/cache@v4
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: ccache-${{ matrix.branch }}-${{ matrix.arch }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ matrix.branch }}-${{ matrix.arch }}-
+
+      - name: Setup Alpine Linux for ${{ matrix.arch }}
+        uses: jirutka/setup-alpine@v1
+        with:
+          arch: ${{ matrix.arch }}
+          branch: ${{ matrix.branch }}
+          packages: |
+            bash build-base ccache coreutils dos2unix findutils gawk git grep tar xz
+          shell-name: alpine.sh
+
+      - name: Prepare environment in chroot
+        env:
+          ARCH: ${{ matrix.arch }}
+          BRANCH: ${{ matrix.branch }}
+        shell: alpine.sh --root {0}
+        run: |
+          apk add quilt --no-progress --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community
+          apk add uasm --no-progress --allow-untrusted --repository=https://spvkgn.github.io/alpine-packages/alpine/$BRANCH
+
+      - name: Build 7-zip inside chroot
+        id: build
+        env:
+          ARCH: ${{ matrix.arch }}
+          BRANCH: ${{ matrix.branch }}
+        working-directory: 7zip
+        shell: alpine.sh {0}
+        run: |
+          bash -x ../build_7zip.sh
+
+      - name: Upload artifacts
+        if: steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: 7zip-${{ matrix.arch }}
+          path: ./**/7zip-${{ matrix.arch }}.tar*
+
+  release:
+    # if: false
+    name: Upload release assets
+    needs: [build]
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Get commit date
+        env:
+          REPO: 'ip7z/7zip'
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "VERSION=$(gh api repos/$REPO/releases/latest --jq '.tag_name')" >> $GITHUB_ENV
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: false
+          tag_name: ${{ env.VERSION }}
+          name: ${{ env.VERSION }}
+          body: |
+            7-zip ${{ env.VERSION }}
+          files: |
+            ./**/7zip*.tar*
