@@ -6,7 +6,7 @@ case $ARCH in
     MAKE_OPTS="MY_ASM=uasm -f ../../cmpl_gcc_x64.mak";;
   x86|arm64)
     MAKE_OPTS="MY_ASM=uasm -f ../../cmpl_gcc_$ARCH.mak";;
-  arm|armhf)
+  arm|armhf|armv7|armv7hf)
     MAKE_OPTS="-f ../../cmpl_gcc_arm.mak";;
   *)
     MAKE_OPTS="-f ../../cmpl_gcc.mak";;

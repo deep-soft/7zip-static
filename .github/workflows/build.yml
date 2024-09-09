@@ -48,6 +48,10 @@ jobs:
             tool: x86_64-multilib-linux-musl
           - arch: x86-64
             tool: x86_64-multilib-linux-musl
+          - arch: armv7
+            tool: armv7-unknown-linux-musleabi
+          - arch: armv7hf
+            tool: armv7-unknown-linux-musleabihf
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -67,10 +71,10 @@ jobs:
           echo "deb [trusted=yes] http://ppa.launchpad.net/far2l-team/tools/ubuntu bionic main" | sudo tee /etc/apt/sources.list.d/tools.list
           sudo apt update -qq && sudo apt install -y dos2unix quilt uasm
 
-          TAG=$(gh api repos/$REPO/releases/latest --jq '.tag_name')
-          mkdir -p $HOME/x-tools
-          wget -qO- https://github.com/$REPO/releases/download/$TAG/$TOOL.tgz | tar -C $HOME/x-tools -xz || exit 1
-          [ -d "$HOME/x-tools/$TOOL/bin" ] && echo "$HOME/x-tools/$TOOL/bin" >> $GITHUB_PATH
+          mkdir -p $HOME/tools
+          gh api repos/$REPO/releases/latest --jq '.tag_name' |\
+            xargs -I{} wget -qO- https://github.com/$REPO/releases/download/{}/$TOOL.tgz | tar -C $HOME/tools -xz || exit 1
+          [ -d "$HOME/tools/$TOOL/bin" ] && echo "$HOME/tools/$TOOL/bin" >> $GITHUB_PATH
 
       - name: Build 7-Zip [${{ matrix.arch }}]
         id: build
