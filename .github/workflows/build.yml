@@ -7,13 +7,57 @@ on:
 
 jobs:
   build:
-    name: build ${{ matrix.arch }}
-    runs-on: ${{ matrix.os }}
+    name: ${{ matrix.arch }}
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-          arch: [x86_64, x86, aarch64, armhf]
-          os: [ubuntu-latest]
-          branch: [v3.19]
+        include:
+          - arch: arm64
+            tool: aarch64-unknown-linux-musl
+          - arch: arm
+            tool: arm-unknown-linux-musleabi
+          - arch: armhf
+            tool: arm-unknown-linux-musleabihf
+          - arch: loong64
+            tool: loongarch64-unknown-linux-musl
+          - arch: m68k
+            tool: m68k-unknown-linux-musl
+          # - arch: microblazeel
+          #   tool: microblazeel-xilinx-linux-musl
+          # - arch: microblaze
+          #   tool: microblaze-xilinx-linux-musl
+          - arch: mips64el
+            tool: mips64el-unknown-linux-musl
+          - arch: mips64
+            tool: mips64-unknown-linux-musl
+          - arch: mipsel
+            tool: mipsel-unknown-linux-musl
+          - arch: mipselsf
+            tool: mipsel-unknown-linux-muslsf
+          - arch: mips
+            tool: mips-unknown-linux-musl
+          - arch: mipssf
+            tool: mips-unknown-linux-muslsf
+          - arch: powerpc64
+            tool: powerpc64-unknown-linux-musl
+          - arch: powerpc
+            tool: powerpc-unknown-linux-musl
+          - arch: riscv
+            tool: riscv32-unknown-linux-musl
+          - arch: riscv64
+            tool: riscv64-unknown-linux-musl
+          - arch: s390x
+            tool: s390x-ibm-linux-musl
+          - arch: sh
+            tool: sh-multilib-linux-musl
+          # - arch: sheb
+          #   tool: sh-multilib-linux-musl
+          #   env:
+          #     CFLAGS_EXTRA: '-mb'
+          - arch: x86
+            tool: x86_64-multilib-linux-musl
+          - arch: x86-64
+            tool: x86_64-multilib-linux-musl
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,38 +68,28 @@ jobs:
           repository: 'ip7z/7zip'
           path: 7zip
 
-      - name: Setup ccache
-        uses: actions/cache@v4
-        with:
-          path: ${{ github.workspace }}/.ccache
-          key: ccache-${{ matrix.branch }}-${{ matrix.arch }}-${{ hashFiles('**/src-history.txt') }}
-          restore-keys: |
-            ccache-${{ matrix.branch }}-${{ matrix.arch }}-
-
-      - name: Setup Alpine Linux for ${{ matrix.arch }}
-        uses: jirutka/setup-alpine@v1
-        with:
-          arch: ${{ matrix.arch }}
-          branch: ${{ matrix.branch }}
-          packages: |
-            bash build-base ccache coreutils dos2unix findutils gawk git grep tar xz
-          shell-name: alpine.sh
-
-      - name: Prepare chroot
+      - name: Set up build tools
         env:
-          BRANCH: ${{ matrix.branch }}
-        shell: alpine.sh --root {0}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: 'musl-cross/musl-cross'
+          ARCH: ${{ matrix.arch }}
+          TOOL: ${{ matrix.tool }}
         run: |
-          apk add quilt --no-progress --repository=https://dl-cdn.alpinelinux.org/alpine/edge/community
-          apk add uasm --no-progress --allow-untrusted --repository=https://spvkgn.github.io/alpine-packages/alpine/$BRANCH
+          echo "deb [trusted=yes] http://ppa.launchpad.net/far2l-team/tools/ubuntu bionic main" | sudo tee /etc/apt/sources.list.d/tools.list
+          sudo apt update -qq && sudo apt install -y dos2unix quilt uasm
 
-      - name: Build 7zz inside chroot
+          TAG=$(wget -qO- --header="Authorization: token $GH_TOKEN" http://api.github.com/repos/$REPO/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
+          mkdir -p $HOME/x-tools
+          wget -qO- https://github.com/$REPO/releases/download/$TAG/${{ matrix.tool }}.tgz | tar -xz -C $HOME/x-tools || exit 1
+          [ -d "$HOME/x-tools/$TOOL/bin" ] && echo "$HOME/x-tools/$TOOL/bin" >> $GITHUB_PATH
+
+      - name: Build 7-Zip [${{ matrix.arch }}]
         id: build
         env:
           ARCH: ${{ matrix.arch }}
-          BRANCH: ${{ matrix.branch }}
+          TOOL: ${{ matrix.tool }}
+          CFLAGS_EXTRA: ${{ matrix.env.CFLAGS_EXTRA }}
         working-directory: 7zip
-        shell: alpine.sh {0}
         run: |
           bash ../build_7zip.sh
 
