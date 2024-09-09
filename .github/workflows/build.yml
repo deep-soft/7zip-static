@@ -2,8 +2,6 @@ name: build
 
 on:
   workflow_dispatch:
-  # push:
-  #   branches: [main]
 
 jobs:
   build:
@@ -22,10 +20,6 @@ jobs:
             tool: loongarch64-unknown-linux-musl
           - arch: m68k
             tool: m68k-unknown-linux-musl
-          # - arch: microblazeel
-          #   tool: microblazeel-xilinx-linux-musl
-          # - arch: microblaze
-          #   tool: microblaze-xilinx-linux-musl
           - arch: mips64el
             tool: mips64el-unknown-linux-musl
           - arch: mips64
@@ -50,10 +44,6 @@ jobs:
             tool: s390x-ibm-linux-musl
           - arch: sh
             tool: sh-multilib-linux-musl
-          # - arch: sheb
-          #   tool: sh-multilib-linux-musl
-          #   env:
-          #     CFLAGS_EXTRA: '-mb'
           - arch: x86
             tool: x86_64-multilib-linux-musl
           - arch: x86-64
@@ -72,15 +62,14 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: 'musl-cross/musl-cross'
-          ARCH: ${{ matrix.arch }}
           TOOL: ${{ matrix.tool }}
         run: |
           echo "deb [trusted=yes] http://ppa.launchpad.net/far2l-team/tools/ubuntu bionic main" | sudo tee /etc/apt/sources.list.d/tools.list
           sudo apt update -qq && sudo apt install -y dos2unix quilt uasm
 
-          TAG=$(wget -qO- --header="Authorization: token $GH_TOKEN" http://api.github.com/repos/$REPO/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
+          TAG=$(gh api repos/$REPO/releases/latest --jq '.tag_name')
           mkdir -p $HOME/x-tools
-          wget -qO- https://github.com/$REPO/releases/download/$TAG/${{ matrix.tool }}.tgz | tar -xz -C $HOME/x-tools || exit 1
+          wget -qO- https://github.com/$REPO/releases/download/$TAG/$TOOL.tgz | tar -C $HOME/x-tools -xz || exit 1
           [ -d "$HOME/x-tools/$TOOL/bin" ] && echo "$HOME/x-tools/$TOOL/bin" >> $GITHUB_PATH
 
       - name: Build 7-Zip [${{ matrix.arch }}]
@@ -88,7 +77,6 @@ jobs:
         env:
           ARCH: ${{ matrix.arch }}
           TOOL: ${{ matrix.tool }}
-          CFLAGS_EXTRA: ${{ matrix.env.CFLAGS_EXTRA }}
         working-directory: 7zip
         run: |
           bash ../build_7zip.sh

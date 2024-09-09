@@ -12,12 +12,12 @@ case $ARCH in
     MAKE_OPTS="-f ../../cmpl_gcc.mak";;
 esac
 
-git ls-files -z | xargs -0 unix2dos -q --allow-chown && (QUILT_PATCHES=../patches quilt push -a || exit 1)
+git ls-files -z | xargs -0 unix2dos -q --allow-chown && ( QUILT_PATCHES=../patches quilt push -a || exit 1 )
 
 ( cd CPP/7zip/Bundles/Alone2 && mkdir -p b/g && \
   make -j$(nproc) \
     CROSS_COMPILE="${TOOL}-" \
-    CFLAGS_BASE_LIST="$CFLAGS_EXTRA -c -D_7ZIP_AFFINITY_DISABLE=1 -DZ7_AFFINITY_DISABLE=1 -D_GNU_SOURCE=1" \
+    CFLAGS_BASE_LIST="-c -D_7ZIP_AFFINITY_DISABLE=1 -DZ7_AFFINITY_DISABLE=1 -D_GNU_SOURCE=1" \
     CFLAGS_WARN_WALL="-Wall -Wextra" COMPL_STATIC=1 $MAKE_OPTS || exit 1 )
 
 find . -type f -name '7zzs' -exec cp -va {} 7zz \; && tar -cJvf $GITHUB_WORKSPACE/7zz-linux-$ARCH.tar.xz 7zz
