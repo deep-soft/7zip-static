@@ -2,6 +2,7 @@ name: build
 
 on:
   workflow_dispatch:
+  push:
 
 jobs:
   build:
@@ -16,42 +17,42 @@ jobs:
             tool: arm-unknown-linux-musleabi
           - arch: armhf
             tool: arm-unknown-linux-musleabihf
-          - arch: loong64
-            tool: loongarch64-unknown-linux-musl
-          - arch: m68k
-            tool: m68k-unknown-linux-musl
-          - arch: mips64el
-            tool: mips64el-unknown-linux-musl
-          - arch: mips64
-            tool: mips64-unknown-linux-musl
-          - arch: mipsel
-            tool: mipsel-unknown-linux-musl
-          - arch: mipselsf
-            tool: mipsel-unknown-linux-muslsf
-          - arch: mips
-            tool: mips-unknown-linux-musl
-          - arch: mipssf
-            tool: mips-unknown-linux-muslsf
-          - arch: powerpc64
-            tool: powerpc64-unknown-linux-musl
-          - arch: powerpc
-            tool: powerpc-unknown-linux-musl
-          - arch: riscv
-            tool: riscv32-unknown-linux-musl
-          - arch: riscv64
-            tool: riscv64-unknown-linux-musl
-          - arch: s390x
-            tool: s390x-ibm-linux-musl
-          - arch: sh
-            tool: sh-multilib-linux-musl
-          - arch: x86
-            tool: x86_64-multilib-linux-musl
-          - arch: x86-64
-            tool: x86_64-multilib-linux-musl
           - arch: armv7
             tool: armv7-unknown-linux-musleabi
           - arch: armv7hf
             tool: armv7-unknown-linux-musleabihf
+          # - arch: loong64
+          #   tool: loongarch64-unknown-linux-musl
+          # - arch: m68k
+          #   tool: m68k-unknown-linux-musl
+          # - arch: mips64el
+          #   tool: mips64el-unknown-linux-musl
+          # - arch: mips64
+          #   tool: mips64-unknown-linux-musl
+          # - arch: mipsel
+          #   tool: mipsel-unknown-linux-musl
+          # - arch: mipselsf
+          #   tool: mipsel-unknown-linux-muslsf
+          # - arch: mips
+          #   tool: mips-unknown-linux-musl
+          # - arch: mipssf
+          #   tool: mips-unknown-linux-muslsf
+          # - arch: powerpc64
+          #   tool: powerpc64-unknown-linux-musl
+          # - arch: powerpc
+          #   tool: powerpc-unknown-linux-musl
+          # - arch: riscv
+          #   tool: riscv32-unknown-linux-musl
+          # - arch: riscv64
+          #   tool: riscv64-unknown-linux-musl
+          # - arch: s390x
+          #   tool: s390x-ibm-linux-musl
+          # - arch: sh
+          #   tool: sh-multilib-linux-musl
+          # - arch: x86
+          #   tool: x86_64-multilib-linux-musl
+          # - arch: x86-64
+          #   tool: x86_64-multilib-linux-musl
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -72,8 +73,9 @@ jobs:
           sudo apt update -qq && sudo apt install -y dos2unix quilt uasm
 
           mkdir -p $HOME/tools
-          gh api repos/$REPO/releases/latest --jq '.tag_name' |\
-            xargs -I{} wget -qO- https://github.com/$REPO/releases/download/{}/$TOOL.tgz | tar -C $HOME/tools -xz || exit 1
+          # gh api repos/$REPO/releases/latest --jq '.tag_name' |\
+          #   xargs -I{} wget -qO- https://github.com/$REPO/releases/download/{}/$TOOL.tgz | tar -C $HOME/tools -xz || exit 1
+          wget -qO- https://github.com/$REPO/releases/download/20240911-next/$TOOL.tgz | tar -C $HOME/tools -xz || exit 1
           [ -d "$HOME/tools/$TOOL/bin" ] && echo "$HOME/tools/$TOOL/bin" >> $GITHUB_PATH
 
       - name: Build 7-Zip [${{ matrix.arch }}]
@@ -93,6 +95,7 @@ jobs:
           path: ./**/7zz-*.tar*
 
   release:
+    if: false
     needs: [build]
     permissions:
       contents: write
