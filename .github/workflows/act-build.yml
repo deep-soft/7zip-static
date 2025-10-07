@@ -45,8 +45,8 @@ jobs:
           echo "tools:[" "https://github.com/$REPO/releases/download/$TAG/$TOOL" "]"
           pushd $HOME/x-tools
           wget https://github.com/$REPO/releases/download/$TAG/$TOOL.tar.xz
+          tar xvf $TOOL.tar.xz
           popd
-          tar xvf $HOME/x-tools -xz
           [ -d "$HOME/x-tools/$TOOL/bin" ] && echo "$HOME/x-tools/$TOOL/bin" >> $GITHUB_PATH
 
       - name: Build 7-Zip [${{ matrix.arch }}]
