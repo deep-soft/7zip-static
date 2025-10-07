@@ -18,7 +18,7 @@ jobs:
           - arch: armhf
             tool: arm-unknown-linux-musleabihf
           - arch: x86
-            tool: x86_64-unknown-linux-musl
+            tool: i686-unknown-linux-musl
           - arch: x86-64
             tool: x86_64-unknown-linux-musl
     steps:
