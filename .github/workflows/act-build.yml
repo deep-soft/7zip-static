@@ -37,7 +37,7 @@ jobs:
           REPO: 'musl-cross/musl-cross'
           TOOL: ${{ matrix.tool }}
         run: |
-          # echo "deb [trusted=yes] http://ppa.launchpad.net/far2l-team/tools/ubuntu bionic main" | sudo tee /etc/apt/sources.list.d/tools.list
+          echo "deb [trusted=yes] http://ppa.launchpad.net/far2l-team/tools/ubuntu bionic main" | sudo tee /etc/apt/sources.list.d/tools.list
           sudo apt update -qq && sudo apt install -y dos2unix quilt uasm
 
           TAG=$(gh api repos/$REPO/releases/latest --jq '.tag_name')
