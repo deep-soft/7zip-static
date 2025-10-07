@@ -43,7 +43,9 @@ jobs:
           echo "TAG:["$TAG"]"
           mkdir -p $HOME/x-tools
           echo "tools:[" "https://github.com/$REPO/releases/download/$TAG/$TOOL" "]"
-          wget -qO- https://github.com/$REPO/releases/download/$TAG/$TOOL.tar.xz
+          pushd $HOME/x-tools
+          wget https://github.com/$REPO/releases/download/$TAG/$TOOL.tar.xz
+          popd
           tar xvf $HOME/x-tools -xz
           [ -d "$HOME/x-tools/$TOOL/bin" ] && echo "$HOME/x-tools/$TOOL/bin" >> $GITHUB_PATH
 
