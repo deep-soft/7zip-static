@@ -12,15 +12,15 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            tool: aarch64-unknown-linux-musl.tar.xz
+            tool: aarch64-unknown-linux-musl
           - arch: arm
-            tool: arm-unknown-linux-musleabi.tar.xz
+            tool: arm-unknown-linux-musleabi
           - arch: armhf
-            tool: arm-unknown-linux-musleabihf.tar.xz
+            tool: arm-unknown-linux-musleabihf
           - arch: x86
-            tool: x86_64-unknown-linux-musl.tar.xz
+            tool: x86_64-unknown-linux-musl
           - arch: x86-64
-            tool: x86_64-unknown-linux-musl.tar.xz
+            tool: x86_64-unknown-linux-musl
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,7 +43,8 @@ jobs:
           echo "TAG:["$TAG"]"
           mkdir -p $HOME/x-tools
           echo "tools:[" "https://github.com/$REPO/releases/download/$TAG/$TOOL" "]"
-          wget -qO- https://github.com/$REPO/releases/download/$TAG/$TOOL | tar -C $HOME/x-tools -xz || exit 1
+          wget -qO- https://github.com/$REPO/releases/download/$TAG/$TOOL.tar.xz
+          tar xvf $HOME/x-tools -xz
           [ -d "$HOME/x-tools/$TOOL/bin" ] && echo "$HOME/x-tools/$TOOL/bin" >> $GITHUB_PATH
 
       - name: Build 7-Zip [${{ matrix.arch }}]
